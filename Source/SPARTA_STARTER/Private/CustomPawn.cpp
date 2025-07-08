@@ -46,9 +46,9 @@ void ACustomPawn::BeginPlay()
 }
 
 // Called every frame
-void ACustomPawn::Tick(float deltaTime)
+void ACustomPawn::Tick(float DeltaTime)
 {
-	Super::Tick(deltaTime);
+	Super::Tick(DeltaTime);
 
 	if (CurrentMoveDirection != FVector::Zero())
 	{
