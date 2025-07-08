@@ -26,7 +26,7 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-
+	// 입력에 따른 키 바인딩은 PlayerController에 있는것이 자연스러울것 같아 이동시켰습니다.
 	virtual void SetupPlayerInputComponent(class UInputComponent* playerInputComponent) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -56,32 +56,9 @@ public:
 };
 
 
+
 /*
-## 3️⃣ 필수 과제 (기본 요구 사항) 🐣
 
-### **필수 과제 1번 - C++ Pawn 클래스와 충돌 컴포넌트 구성**
-
-- **Pawn 클래스 생성**
-- 충돌 컴포넌트를 루트 컴포넌트로 설정합니다 (CapsuleComponent/BoxComponent/SphereComponent 중 택 1).
-- SkeletalMeshComponent, SpringArmComponent, CameraComponent를 부착하여 3인칭 시점을 구성합니다.
-- `GameMode`에서 `DefaultPawnClass`를 이 Pawn 클래스로 지정합니다.
-- **Physics 설정**
-- **루트 충돌 컴포넌트 및 SkeletalMeshComponent 모두 Simulate Physics = false로 설정합니다.**
-- 물리 시뮬레이션이 아닌 코드로 직접 제어합니다.
-
-### **필수 과제 2번 - Enhanced Input 매핑 & 바인딩**
-
-- **Input 액션 생성**
-- Move (WASD용 - Vector2D 타입)
-- Look (마우스 이동용 - Vector2D 타입)
-- Input Mapping Context (IMC)에 액션들을 매핑합니다.
-- **입력 바인딩 및 이동/회전 로직 구현**
-- `SetupPlayerInputComponent()`에서 각 액션에 함수를 바인딩합니다.
-- `AddActorLocalOffset()`, `AddActorLocalRotation()` 등을 사용하여 이동과 회전을 구현합니다.
-- 이동 방향은 Pawn의 Forward/Right 벡터에 따라 결정됩니다.
-- 마우스 입력으로 Yaw와 Pitch를 직접 계산하여 회전을 구현합니다.
-- `AddControllerYawInput()` 또는 `AddControllerPitchInput()` 같은 기본 제공 함수를 사용하지 않습니다.
-- **평면 상에서의 이동 및 회전만 처리합니다 (중력/낙하 효과 없음).**
 
 
 ## 4️⃣ 도전 과제 (선택 요구 사항) 🦅

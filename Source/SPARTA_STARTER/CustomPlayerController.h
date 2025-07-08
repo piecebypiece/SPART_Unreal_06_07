@@ -20,6 +20,7 @@ class SPARTA_STARTER_API ACustomPlayerController : public APlayerController
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float delta) override;
 	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* pawn) override;
 
@@ -38,4 +39,10 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<ACustomPawn> ControlledPawn;
+
+	UPROPERTY(VisibleAnywhere)
+	FRotator InRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	float RotationSpeed = 1.f;
 };
