@@ -15,16 +15,7 @@ void ACustomPlayerController::BeginPlay()
 
 void ACustomPlayerController::Tick(float delta)
 {
-	// 인풋에 의해 InRotation 값이 존재한다면.
-	if (InRotation.IsNearlyZero() == false)
-	{	// 입력값에 의한 회전 입력 적용.
-		FRotator currentRotation = GetControlRotation();
-		currentRotation += InRotation * RotationSpeed * delta;
-		SetControlRotation (currentRotation);
-
-		const FRotator YawRotation(0, currentRotation.Yaw, 0);	// 세로축 기준 회전 생성 위아래 회전은 액터회전에 반영하지 않는다.
-		ControlledPawn->Look(YawRotation);
-	}
+	Super::Tick(delta);
 }
 
 void ACustomPlayerController::SetupInputComponent()
@@ -37,14 +28,6 @@ void ACustomPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	if (InPawn == nullptr)
 		return;
-
-	// Pawn의 현재 회전을 가져옴
-	FRotator PawnRotation = InPawn->GetActorRotation();
-
-	// Yaw만 사용 (Pitch, Roll은 보통 카메라용)
-	FRotator NewControlRotation = FRotator(0.f, PawnRotation.Yaw, 0.f);
-
-	SetControlRotation(NewControlRotation);
 
 	TObjectPtr<ACustomPawn> CustomPawn = Cast<ACustomPawn>(GetPawn());
 	ControlledPawn = CustomPawn;
@@ -88,49 +71,16 @@ void ACustomPlayerController::HandleMove(const FInputActionValue& Value)
 	if (ControlledPawn)
 	{
 		const FVector MovementVector = Value.Get<FVector>();
-		FVector result = FVector::ZeroVector;
-		if (MovementVector.IsNearlyZero() == false)
-		{
-
-			const FRotator Rotation = GetControlRotation();	// 컨트롤러의 회전 값.
-			const FRotator YawRotation(0, Rotation.Yaw, 0);	// 세로축 기준 회전 생성
-			
-			// 방향 벡터 생성
-			const FRotationMatrix MatrixYRotation(YawRotation);
-			const FVector ForwardDirection = MatrixYRotation.GetUnitAxis(EAxis::X);
-			const FVector RightDirection = MatrixYRotation.GetUnitAxis(EAxis::Y);
-			const FVector UpDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::Z);
-
-			result = (ForwardDirection * MovementVector.X) + (RightDirection * MovementVector.Y) 
-				+ (UpDirection * MovementVector.Z) ;
-		}
-		ControlledPawn->Move(result);
+		ControlledPawn->Move(MovementVector);
 	}
 }
 
 void ACustomPlayerController::HandleLook(const FInputActionValue& Value)
 {
-	const FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	InRotation.Yaw = LookAxisVector.X;
-	InRotation.Pitch = LookAxisVector.Y;
-}
-
-void ACustomPlayerController::HandleUpDown(const FInputActionValue& Value)
-{
-	TObjectPtr<ADronPawn> DronPawn = Cast<ADronPawn>(GetPawn());
-
-	if (DronPawn.IsNull())
-		return;
-	
-	const float MovementValue = Value.Get<float>();
-	FVector result = FVector::ZeroVector;
-	if (FMath::IsNearlyEqual(MovementValue, 0.0f) == false)
+	if (ControlledPawn)
 	{
-		const FRotator Rotation = GetControlRotation();	// 컨트롤러의 회전 값.
-		// 새로축을 기준으로 한 방향 생성
-		const FVector UpDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::Z);
-		result = UpDirection * MovementValue;
+		const FVector LookAxisVector = Value.Get<FVector>();
+		FRotator Rotate(LookAxisVector.Y, LookAxisVector.X, LookAxisVector.Z);
+		ControlledPawn->Look(Rotate);
 	}
-	ControlledPawn->Move(result);
 }

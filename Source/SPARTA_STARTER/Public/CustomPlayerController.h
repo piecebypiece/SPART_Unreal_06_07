@@ -30,8 +30,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> LookAction;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<UInputAction> UpDownAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
@@ -42,14 +40,9 @@ protected:
 private:
 	void HandleMove(const struct FInputActionValue& Value);
 	void HandleLook(const struct FInputActionValue& Value);
-	void HandleUpDown(const struct FInputActionValue& Value);
 
 	UPROPERTY()
 	TObjectPtr<ACustomPawn> ControlledPawn;
 
-	UPROPERTY(VisibleAnywhere)
-	FRotator InRotation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	float RotationSpeed = 1.f;
+	
 };

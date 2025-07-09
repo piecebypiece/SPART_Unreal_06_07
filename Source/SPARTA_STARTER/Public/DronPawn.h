@@ -16,10 +16,19 @@ public:
 	ADronPawn();
 
 protected:
-	// Called when the game starts or when spawned
+
 	virtual void BeginPlay() override;
+	
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void Look(const FRotator& lookRotater) override;
+
+	virtual void Move(const FVector& MoveVector) override;
+
+	virtual void UpdateLook (float Delta) override;
+private:
+
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+
 };
