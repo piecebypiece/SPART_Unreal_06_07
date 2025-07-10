@@ -15,6 +15,12 @@ public:
 	// Sets default values for this pawn's properties
 	ADronPawn();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flight")
+	bool bIsFlying = false; // 비행 중 여부
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleFlight(bool bIsFly); // 비행 모드 전환
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -26,6 +32,8 @@ protected:
 	virtual void Move(const FVector& MoveVector) override;
 
 	virtual void UpdateLook (float Delta) override;
+
+	virtual void OnGrounded() override; // CustomPawn의 OnGrounded 오버라이드
 private:
 
 

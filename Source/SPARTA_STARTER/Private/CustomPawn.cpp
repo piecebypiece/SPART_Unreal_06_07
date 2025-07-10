@@ -13,6 +13,12 @@ ACustomPawn::ACustomPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	GroundMoveSpeed = 3.f;
+	AirMoveSpeedMultiplier = 0.5f;
+	GravityAcceleration = -980.f;
+	CurrentZVelocity = 0.f;
+	bIsGrounded = false;
+
 	// Capsule Component
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	SetRootComponent(CapsuleComponent);
@@ -45,62 +51,60 @@ void ACustomPawn::BeginPlay()
 	Super::BeginPlay();
 
 	// 시작 회전 적용
-	FRotator ActorRot = GetActorRotation(); 
-	FRotator CameraOffset = FRotator(0, 180, 0); 
-
-	SpringArmComponent->SetRelativeRotation(CameraOffset);
-	SpringArmComponent->SetWorldRotation(ActorRot + CameraOffset);
-}
-
-FQuat ACustomPawn::CaculateRelativePichYaw(FRotator InRot)
-{
-	FRotator CurrentArmRelativeRotate = SpringArmComponent->GetRelativeRotation();
-	FQuat CurrentQuat = CurrentArmRelativeRotate.Quaternion();
-
-	FVector PitchAxis = CurrentQuat.GetRightVector();   // Pitch는 현재 '오른쪽' 기준 회전
-	FVector YawAxis   = CurrentQuat.GetUpVector();      // Yaw는 현재 '위쪽' 기준 회전
-
-	float PitchDelta = InRot.Pitch;
-	float YawDelta   = InRot.Yaw;
-
-	// 나머지 회전값은 현재 Roll 에 의한 회전 방영 계산
-	FQuat PitchQuat = FQuat(PitchAxis, FMath::DegreesToRadians(PitchDelta));
-	FQuat YawQuat   = FQuat(YawAxis,   FMath::DegreesToRadians(YawDelta));
-	FQuat DeltaQuat = YawQuat * PitchQuat;
-	return DeltaQuat;
+	ResetRotatorToGround();
 }
 
 void ACustomPawn::UpdateMovement(float Delta)
 {
 	if (CurrentMoveDirection.IsNearlyZero() == false)
 	{
-		//const FRotator actRot = GetActorRotation();
-		// 방향 벡터 생성
-		//const FRotationMatrix MatrixRotation(actRot);
-		//const FVector ForwardDirection = MatrixRotation.GetUnitAxis(EAxis::X);
-		//const FVector RightDirection = MatrixRotation.GetUnitAxis(EAxis::Y);
-		//const FVector UpDirection = MatrixRotation.GetUnitAxis(EAxis::Z);
-
-		/*FVector result = (ForwardDirection * CurrentMoveDirection.X) + (RightDirection * CurrentMoveDirection.Y)
-			+ (UpDirection * CurrentMoveDirection.Z);*/
-
-		AddActorLocalOffset(CurrentMoveDirection * MoveSpeed * Delta, true);
+		float CurrentMoveSpeed = GroundMoveSpeed;
+		if (!bIsGrounded)
+		{
+			CurrentMoveSpeed *= AirMoveSpeedMultiplier;
+		}
+		
+		AddActorLocalOffset(CurrentMoveDirection * CurrentMoveSpeed * Delta);
 	}
 }
+
+void ACustomPawn::CheckGroundCollision()
+{
+	FVector StartLocation = GetActorLocation();
+	FVector EndLocation = StartLocation + FVector(0, 0, -CapsuleComponent->GetScaledCapsuleHalfHeight() - 10.f); // 폰 아래로 10cm 더 트레이스
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, Params);
+
+	if (bHit && !bIsGrounded) // 새로 착지한 경우
+	{
+		OnGrounded();
+	}
+	bIsGrounded = bHit;
+}
+
+void ACustomPawn::OnGrounded()
+{
+	// 바닥 기준으로 바로 서도록 회전값 수정
+	FRotator CurrentRotation = GetActorRotation();
+	SetActorRotation(FRotator(0, CurrentRotation.Yaw, 0)); // Pitch와 Roll을 0으로 설정
+
+	ResetRotatorToGround();
+}
+
 
 void ACustomPawn::UpdateLook(float Delta)
 {
 	// 인풋에 의해 InRotation 값이 존재한다면.
 	if (RotatorRequest.IsNearlyZero() == false)
 	{	// 입력값에 의한 회전 입력 적용.
+
 		const FRotator DelRot = RotatorRequest * Delta * RotationSpeed;
-		FQuat DeltaQuat = CaculateRelativePichYaw(DelRot);
-
-		FRotator NewRotator = DeltaQuat.Rotator();
-		NewRotator.Roll = DelRot.Roll; // Roll만 수치 더해서 직접 반영
-
-		SpringArmComponent->AddRelativeRotation(NewRotator);
-		AddActorLocalRotation(FRotator(0, NewRotator.Yaw, 0)); 
+		AddActorLocalRotation(FRotator(0., DelRot.Yaw, 0.)); 
+		SpringArmComponent->AddRelativeRotation(DelRot);
 	}
 }
 
@@ -108,15 +112,26 @@ void ACustomPawn::UpdateLook(float Delta)
 void ACustomPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// 중력 적용
+	if (bUseGravity and !bIsGrounded)
+		CurrentZVelocity += GravityAcceleration * DeltaTime;
+
+	// 지면 충돌 감지
+	CheckGroundCollision();
+
+	// 착지 시 Z축 속도 리셋
+	if (bIsGrounded && CurrentZVelocity < 0.f)
+	{
+		CurrentZVelocity = 0.f;
+	}
+
+	// 중력 이동 적용
+	FVector CurrentLocation = GetActorLocation();
+	SetActorLocation(CurrentLocation + FVector(0, 0, CurrentZVelocity * DeltaTime));
+
 	UpdateLook(DeltaTime);
 	UpdateMovement(DeltaTime);
-}
-
-// Called to bind functionality to input
-void ACustomPawn::SetupPlayerInputComponent(UInputComponent* playerInputComponent)
-{
-	Super::SetupPlayerInputComponent(playerInputComponent);
-
 }
 
 void ACustomPawn::Move(const FVector& MovementVector)
@@ -129,4 +144,14 @@ void ACustomPawn::Move(const FVector& MovementVector)
 void ACustomPawn::Look(const FRotator& lookRotater)
 {
 	RotatorRequest = lookRotater;
+}
+
+void ACustomPawn::ResetRotatorToGround()
+{
+	FRotator ActorRot = GetActorRotation(); 
+	//FRotator CameraOffset = FRotator(0, 180, 0); 
+
+	FRotator ArmRot = SpringArmComponent->GetRelativeRotation();
+	SpringArmComponent->SetRelativeRotation(FRotator(ArmRot.Pitch, ActorRot.Yaw, 0.));
+	//SpringArmComponent->SetWorldRotation(FRotator(0., ActorRot.Yaw, 0.));
 }

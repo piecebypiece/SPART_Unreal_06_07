@@ -31,20 +31,33 @@ protected:
 	float RotationSpeed = 1.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InputProperties",  meta = (AllowPrivateAccess = "true"))
-	float MoveSpeed = 3.f;
+	float GroundMoveSpeed = 3.f; // 지상 이동 속도
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "InputProperties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InputProperties",  meta = (AllowPrivateAccess = "true"))
+	float AirMoveSpeedMultiplier = 0.5f; // 공중 이동 속도 제한 (지상 속도의 비율)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gravity", meta = (AllowPrivateAccess = "true"))
+	float GravityAcceleration = -980.f; // 중력 가속도 (cm/s^2)
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
 	FVector CurrentMoveDirection = FVector::ZeroVector;
 
-	FQuat CaculateRelativePichYaw(FRotator InRot);
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+	float CurrentZVelocity = 0.f; // 현재 Z축 속도
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool bIsGrounded = false; // 지상 착지 여부
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool bUseGravity = true; // 중력 적용 여부
 
 	virtual void UpdateMovement(float Delta);
 	virtual void UpdateLook(float Delta);
+	virtual void CheckGroundCollision(); // 지면 충돌 감지 함수
+	virtual void OnGrounded();
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	// 입력에 따른 키 바인딩은 PlayerController에 있는것이 자연스러울것 같아 이동시켰습니다.
-	virtual void SetupPlayerInputComponent(class UInputComponent* playerInputComponent) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UCapsuleComponent> CapsuleComponent;
@@ -64,4 +77,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void Look(const FRotator& LookRotater);
 
+	void ResetRotatorToGround();
 };
