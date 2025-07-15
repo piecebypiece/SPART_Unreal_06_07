@@ -1,78 +1,83 @@
 #include "PlatformTasks.h"
 #include "PlatformBase.h"
+#include "Components/SplineComponent.h"
 #include "StateTreeExecutionContext.h"
-#include "GameFramework/Actor.h"
 
-//void FDistanceCheckEvaluator::Evaluate(FStateTreeExecutionContext& Context, const EStateTreeEvaluationType EvalType, const float DeltaTime) const
+//bool FStateTreeSplinePointCountEvaluator::Link(FStateTreeLinker& Linker)
 //{
-//    const APlatformBase* Platform = Cast<APlatformBase>(Context.GetOwner());
-//    if (Platform)
-//    {
-//        const float Distance = FVector::Dist(Platform->StartLocation, Platform->GetActorLocation());
-//        // This is a placeholder. The actual logic to signal the StateTree will be more complex.
-//        // For now, we'll just log it.
-//        UE_LOG(LogTemp, Warning, TEXT("Distance: %f / %f"), Distance, Platform->MovementRange);
-//    }
+//	Linker.LinkExternalData(PlatformActorHandle);
+//	return true;
 //}
 
-void FDistanceCheckEvaluator::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+void FStateTreeSplinePointCountEvaluator::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
 {
-    const APlatformBase* Platform = Cast<APlatformBase>(Context.GetOwner());
-    if (Platform)
-    {
-        const float Distance = FVector::Dist(Platform->StartLocation, Platform->GetActorLocation());
-        // This is a placeholder. The actual logic to signal the StateTree will be more complex.
-        // For now, we'll just log it.
-        UE_LOG(LogTemp, Warning, TEXT("Distance: %f / %f"), Distance, Platform->MovementRange);
-    }
+	const APlatformBase* PlatformActor = Cast<APlatformBase>(Context.GetOwner());
+	FStateTreeSplinePointCountEvaluatorInstanceData& InstanceData = Context.GetInstanceData<FStateTreeSplinePointCountEvaluatorInstanceData>(*this);
+
+	if (!PlatformActor || !PlatformActor->PathSpline)
+	{
+		InstanceData.PointCount = 0;
+		return;
+	}
+
+	InstanceData.PointCount = PlatformActor->PathSpline->GetNumberOfSplinePoints();
 }
 
-EStateTreeRunStatus FMoveTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+FStateTreeFindNextPointTask::FStateTreeFindNextPointTask()
 {
-    APlatformBase* Platform = Cast<APlatformBase>(Context.GetOwner());
-    if (Platform)
-    {
-        FVector NewLocation = Platform->GetActorLocation() + Platform->MoveDirection * Platform->MovementSpeed * DeltaTime;
-        Platform->SetActorLocation(NewLocation);
-    }
-    return EStateTreeRunStatus::Running;
+	bShouldCallTick = false;
 }
 
-EStateTreeRunStatus FRotateTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+EStateTreeRunStatus FStateTreeFindNextPointTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
 {
-    APlatformBase* Platform = Cast<APlatformBase>(Context.GetOwner());
-    if (Platform)
-    {
-        FRotator NewRotation = Platform->GetActorRotation() + Platform->RotationSpeed * DeltaTime;
-        Platform->SetActorRotation(NewRotation);
-    }
-    return EStateTreeRunStatus::Running;
-}
+	APlatformBase* PlatformActor = Cast<APlatformBase>(Context.GetOwner());
+	FStateTreeFindNextPointTaskInstanceData& InstanceData = Context.GetInstanceData<FStateTreeFindNextPointTaskInstanceData>(*this);
 
-EStateTreeRunStatus FWaitWithTimerTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
-{
-    APlatformBase* Platform = Cast<APlatformBase>(Context.GetOwner());
-    if (Platform)
-    {
-        FTimerHandle TimerHandle;
-        FTimerDelegate TimerDelegate;
-        TimerDelegate.BindLambda([&]
-        {
-            // This is a placeholder. We'll need a way to signal the StateTree to transition.
-            UE_LOG(LogTemp, Warning, TEXT("Timer Finished!"));
-        });
-        Platform->GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, Platform->WaitTime, false);
-    }
-    return EStateTreeRunStatus::Running;
-}
+	const int32 PointCount = InstanceData.PointCount;
 
-EStateTreeRunStatus FToggleVisibilityTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
-{
-    APlatformBase* Platform = Cast<APlatformBase>(Context.GetOwner());
-    if (Platform)
-    {
-        Platform->SetActorHiddenInGame(!Platform->IsHidden());
-        Platform->SetActorEnableCollision(!Platform->GetActorEnableCollision());
-    }
-    return EStateTreeRunStatus::Succeeded;
+	if (!PlatformActor || PointCount < 2)
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	int32 NextPointIndex = PlatformActor->CurrentTargetPointIndex;
+	bool bCurrentIsReversing = PlatformActor->bIsReversing;
+
+	if (bCurrentIsReversing)
+	{
+		NextPointIndex--;
+		if (NextPointIndex < 0)
+		{
+			if (bLoop)
+			{
+				NextPointIndex = PointCount - 1;
+			}
+			else
+			{
+				NextPointIndex = 1;
+				bCurrentIsReversing = false;
+			}
+		}
+	}
+	else
+	{
+		NextPointIndex++;
+		if (NextPointIndex >= PointCount)
+		{
+			if (bLoop)
+			{
+				NextPointIndex = 0;
+			}
+			else
+			{
+				NextPointIndex = PointCount - 2;
+				bCurrentIsReversing = true;
+			}
+		}
+	}
+
+	PlatformActor->CurrentTargetPointIndex = NextPointIndex;
+	PlatformActor->bIsReversing = bCurrentIsReversing;
+
+	return EStateTreeRunStatus::Succeeded;
 }

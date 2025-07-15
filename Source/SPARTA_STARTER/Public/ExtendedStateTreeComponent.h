@@ -18,6 +18,5 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Extended State Tree")
 	const UStateTree* GetStateTree() const { return StateTreeRef.GetStateTree(); }
-		
-	
+
 };

@@ -3,10 +3,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "PlatformData.h"
+#include "ExtendedStateTreeComponent.h"
 #include "PlatformBase.generated.h"
 
 class USplineComponent;
-class UStateTreeComponent;
 
 UCLASS()
 class SPARTA_STARTER_API APlatformBase : public AActor
@@ -33,7 +33,7 @@ public:
 	TObjectPtr<USplineComponent> PathSpline;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<UStateTreeComponent> StateTreeComponent;
+	TObjectPtr<UExtendedStateTreeComponent> ExtendedStateTreeComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform Settings")
 	TArray<FSplinePointDetails> PointDetails;
