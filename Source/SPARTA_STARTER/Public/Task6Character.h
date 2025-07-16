@@ -15,6 +15,8 @@ class SPARTA_STARTER_API ATask6Character : public ACharacter
 public:
 	ATask6Character();
 
+	virtual void Tick(float DeltaTime) override;
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;

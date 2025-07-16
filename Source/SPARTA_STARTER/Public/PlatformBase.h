@@ -35,15 +35,29 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UExtendedStateTreeComponent> ExtendedStateTreeComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform Settings")
-	TArray<FSplinePointDetails> PointDetails;
+	    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform Settings")
+    TArray<FSplinePointDetails> PointDetails;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Platform State")
-	int32 CurrentTargetPointIndex = 0;
+    UFUNCTION(BlueprintCallable, Category = "Platform")
+    void OnPlatformHit();
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Platform State")
-	bool bIsReversing = false;
+	UFUNCTION(BlueprintCallable, Category = "Collision")
+	bool HasCollisionOccurredThisTick() { return bHasCollisionOccurredThisTick; }
 
 private:
+    bool bHasCollisionOccurredThisTick = false;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Platform State")
+	int32 CurrentTargetPointIndex = 0;
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Platform")
+	float GetDistanceAlongSpline() const { return DistanceAlongSpline; }
+
+	UFUNCTION(BlueprintCallable, Category = "Platform")
+	void SetDistanceAlongSpline(float NewDistance) { DistanceAlongSpline = NewDistance; }
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Platform State", meta = (AllowPrivateAccess = "true"))
 	float DistanceAlongSpline = 0.0f;
 };

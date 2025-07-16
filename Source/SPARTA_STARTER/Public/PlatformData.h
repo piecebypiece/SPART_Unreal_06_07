@@ -5,6 +5,14 @@
 #include "PlatformData.generated.h"
 
 UENUM(BlueprintType)
+enum class EPlatformMovementMode : uint8
+{
+	None UMETA(DisplayName = "None"),
+	Loop UMETA(DisplayName = "Loop"),
+	PingPong UMETA(DisplayName = "PingPong"),
+};
+
+UENUM(BlueprintType)
 enum class EPlatformAction : uint8
 {
 	None UMETA(DisplayName = "None"),
@@ -29,4 +37,7 @@ struct FSplinePointDetails : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform", meta = (EditCondition = "Action == EPlatformAction::Pause"))
 	float PauseDuration = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform")
+	bool bDisappear;
 };

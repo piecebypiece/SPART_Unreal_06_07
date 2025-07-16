@@ -52,6 +52,12 @@ struct SPARTA_STARTER_API FPlatformStateEvaluatorInstanceData
 
     UPROPERTY(EditAnywhere, Category = "Output")
     float Alpha = 0.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Output")
+    bool bReachedPointActionTrigger = false;
+
+    UPROPERTY(EditAnywhere, Category = "Output")
+    bool bCollisionDetected = false;
 };
 
 
@@ -68,7 +74,7 @@ struct SPARTA_STARTER_API FUpdateMovementTask : public FStateTreeTaskCommonBase
     virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
 
     UPROPERTY(EditAnywhere, Category = "Settings")
-    bool bLoop = false;
+    EPlatformMovementMode MovementMode = EPlatformMovementMode::None;
 };
 
 USTRUCT()
@@ -81,6 +87,9 @@ struct SPARTA_STARTER_API FUpdateMovementTaskInstanceData
 
     UPROPERTY(EditAnywhere, Category = "Input")
     float CurrentMoveSpeed = 0.0f;
+
+    UPROPERTY(Transient)
+    bool bReverseDirection = false;
 };
 
 /**
@@ -130,4 +139,29 @@ struct SPARTA_STARTER_API FUpdateVisibilityTaskInstanceData
 
     UPROPERTY(EditAnywhere, Category = "Input")
     bool bShouldBeVisible = true;
+};
+
+/**
+ * 플랫폼을 특정 시간 동안 일시 정지시키는 Task입니다.
+ */
+USTRUCT()
+struct SPARTA_STARTER_API FPauseTask : public FStateTreeTaskCommonBase
+{
+    GENERATED_BODY()
+
+    virtual const UStruct* GetInstanceDataType() const override;
+    virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+    virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const override;
+
+    UPROPERTY(EditAnywhere, Category = "Settings")
+    float Duration = 1.0f;
+};
+
+USTRUCT()
+struct SPARTA_STARTER_API FPauseTaskInstanceData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(Transient)
+    float ElapsedTime = 0.0f;
 };

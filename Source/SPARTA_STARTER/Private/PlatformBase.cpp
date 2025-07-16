@@ -38,34 +38,15 @@ void APlatformBase::BeginPlay()
 	{
 		ExtendedStateTreeComponent->StartLogic();
 	}
-
-	if (PathSpline->GetNumberOfSplinePoints() > 0)
-	{
-		SetActorLocation(PathSpline->GetLocationAtSplinePoint(CurrentTargetPointIndex, ESplineCoordinateSpace::World));
-	}
 }
 
 void APlatformBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	bHasCollisionOccurredThisTick = false;
+}
 
-	if (PathSpline->GetNumberOfSplinePoints() < 2 || CurrentTargetPointIndex < 0 || CurrentTargetPointIndex >= PathSpline->GetNumberOfSplinePoints())
-	{
-		return;
-	}
-
-	const FSplinePointDetails& CurrentPointDetail = PointDetails[CurrentTargetPointIndex];
-
-	const FVector TargetLocation = PathSpline->GetLocationAtSplinePoint(CurrentTargetPointIndex, ESplineCoordinateSpace::World);
-	const FRotator TargetRotation = CurrentPointDetail.TargetRotation;
-
-	FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, CurrentPointDetail.Speed / 100.0f);
-	SetActorLocation(NewLocation);
-
-	FRotator NewActorRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 5.0f);
-	SetActorRotation(NewActorRotation);
-
-	if (FVector::DistSquared(GetActorLocation(), TargetLocation) < FMath::Square(10.0f))
-	{
-	}
+void APlatformBase::OnPlatformHit()
+{
+	bHasCollisionOccurredThisTick = true;
 }

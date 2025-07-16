@@ -46,3 +46,9 @@ ATask6Character::ATask6Character()
 	}
 }
 
+void ATask6Character::Tick(float DeltaTime)
+{
+
+	//GetCharacterMovement()->UpdateBasedMovement(DeltaTime);
+}
+
